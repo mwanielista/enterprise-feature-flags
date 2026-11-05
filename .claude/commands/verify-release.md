@@ -1,0 +1,1 @@
+Evaluate production readiness against OpenSpec acceptance scenarios. Run available tests, inspect CI/CD, DB migration and security constraints, HA/failover evidence, observability and recovery runbooks. Provide GO/NO-GO with evidence, exact failures and unverified checks. Never claim a live production SLO was proven by local tests.

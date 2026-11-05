@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+**/target/
+**/node_modules/
+**/dist/
+**/.angular/
+.idea/
+.vscode/
+.DS_Store
+coverage/
+*.log

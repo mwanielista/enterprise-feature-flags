@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/secrets/**)",
+      "Bash(rm -rf *)",
+      "Bash(git push --force*)",
+      "Bash(kubectl delete *)"
+    ],
+    "ask": [
+      "Bash(docker compose down -v*)",
+      "Bash(kubectl apply *)",
+      "Bash(helm upgrade *)",
+      "Bash(git push *)"
+    ]
+  }
+}

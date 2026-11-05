@@ -1,0 +1,1 @@
+Read CLAUDE.md and the current OpenSpec change `implement-mvp`. Validate OpenSpec if CLI available. Identify the earliest unchecked task in tasks.md, explain its acceptance criteria and files, implement only that task with appropriate tests, run them, then mark it complete only if verified. Summarize actual commands/results and remaining risks.

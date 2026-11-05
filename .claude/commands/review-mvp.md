@@ -1,0 +1,1 @@
+Review the repository against openspec/changes/implement-mvp proposal, specs, design, tasks and contracts/openapi.yaml. Coordinate architecture/security/QA viewpoints. Output a findings table grouped by blocker/high/medium, with file references and concrete corrective tasks. Do not change files unless explicitly asked.

@@ -1,0 +1,318 @@
+openapi: 3.0.3
+info:
+  title: Enterprise Feature Flags Business API
+  version: 1.0.0-mvp
+  description: POST-only business endpoints; infrastructure probes are outside this contract.
+servers:
+  - url: /api/v1
+paths:
+  /runtime/flag/check:
+    post:
+      operationId: checkFlag
+      tags: [Runtime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SingleCheckRequest'
+      responses:
+        '200':
+          description: Known active flag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SingleCheckResponse'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /runtime/flags/check:
+    post:
+      operationId: checkFlags
+      tags: [Runtime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/BatchCheckRequest'}
+      responses:
+        '200':
+          description: Values from one snapshot
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/BatchCheckResponse'}
+        '404': {$ref: '#/components/responses/Problem'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /runtime/flags/snapshot:
+    post:
+      operationId: getSnapshot
+      tags: [Runtime]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/EmptyRequest'}
+      responses:
+        '200':
+          description: All nonarchived flags
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SnapshotResponse'}
+        '503': {$ref: '#/components/responses/Problem'}
+  /admin/flags/list:
+    post:
+      operationId: listFlags
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/ListRequest'}
+      responses:
+        '200':
+          description: Paginated flags
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/FlagListResponse'}
+  /admin/flags/create:
+    post:
+      operationId: createFlag
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateFlagRequest'}
+      responses:
+        '200':
+          description: Created flag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Flag'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/flags/update:
+    post:
+      operationId: updateFlag
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/UpdateFlagRequest'}
+      responses:
+        '200':
+          description: Updated flag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Flag'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/flags/set-status:
+    post:
+      operationId: setFlagStatus
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/StatusRequest'}
+      responses:
+        '200':
+          description: Updated flag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Flag'}
+        '409': {$ref: '#/components/responses/Problem'}
+  /admin/flags/delete:
+    post:
+      operationId: archiveFlag
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/KeyAndVersion'}
+      responses:
+        '200':
+          description: Archived flag
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Flag'}
+  /admin/flags/history:
+    post:
+      operationId: flagHistory
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/KeyRequest'}
+      responses:
+        '200':
+          description: Historical revisions
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [history]
+                properties:
+                  history: {type: array, items: {$ref: '#/components/schemas/HistoryEntry'}}
+  /admin/flags/rollback:
+    post:
+      operationId: rollbackFlag
+      tags: [Admin]
+      security: [{adminAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/RollbackRequest'}
+      responses:
+        '200':
+          description: Newly created restoring revision
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Flag'}
+        '409': {$ref: '#/components/responses/Problem'}
+components:
+  securitySchemes:
+    adminAuth:
+      type: openIdConnect
+      openIdConnectUrl: https://idp.example.invalid/.well-known/openid-configuration
+  responses:
+    Problem:
+      description: RFC 9457 application/problem+json
+      content:
+        application/problem+json:
+          schema: {$ref: '#/components/schemas/Problem'}
+  schemas:
+    FlagKey:
+      type: string
+      pattern: '^[A-Z][A-Z0-9_]{1,149}$'
+    EmptyRequest:
+      type: object
+      additionalProperties: false
+    KeyRequest:
+      type: object
+      required: [key]
+      properties:
+        key: {$ref: '#/components/schemas/FlagKey'}
+      additionalProperties: false
+    KeyAndVersion:
+      allOf:
+        - {$ref: '#/components/schemas/KeyRequest'}
+        - type: object
+          required: [expectedVersion]
+          properties:
+            expectedVersion: {type: integer, format: int64, minimum: 0}
+    SingleCheckRequest: {$ref: '#/components/schemas/KeyRequest'}
+    SingleCheckResponse:
+      type: object
+      required: [key, enabled, revision]
+      properties:
+        key: {$ref: '#/components/schemas/FlagKey'}
+        enabled: {type: boolean}
+        revision: {type: integer, format: int64}
+    BatchCheckRequest:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+          items: {$ref: '#/components/schemas/FlagKey'}
+    BatchCheckResponse:
+      type: object
+      required: [flags, revision]
+      properties:
+        flags: {type: object, additionalProperties: {type: boolean}}
+        revision: {type: integer, format: int64}
+    SnapshotResponse:
+      type: object
+      required: [revision, generatedAt, flags]
+      properties:
+        revision: {type: integer, format: int64}
+        generatedAt: {type: string, format: date-time}
+        flags: {type: object, additionalProperties: {type: boolean}}
+    ListRequest:
+      type: object
+      properties:
+        search: {type: string, maxLength: 200}
+        archived: {type: boolean}
+        page: {type: integer, minimum: 0, default: 0}
+        size: {type: integer, minimum: 1, maximum: 100, default: 20}
+    Flag:
+      type: object
+      required: [id, key, name, enabled, archived, version, createdAt, updatedAt]
+      properties:
+        id: {type: string, format: uuid}
+        key: {$ref: '#/components/schemas/FlagKey'}
+        name: {type: string}
+        description: {type: string}
+        enabled: {type: boolean}
+        archived: {type: boolean}
+        version: {type: integer, format: int64}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+    FlagListResponse:
+      type: object
+      required: [items, page, size, total]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/Flag'}}
+        page: {type: integer}
+        size: {type: integer}
+        total: {type: integer, format: int64}
+    CreateFlagRequest:
+      type: object
+      required: [key, name]
+      properties:
+        key: {$ref: '#/components/schemas/FlagKey'}
+        name: {type: string, minLength: 1, maxLength: 255}
+        description: {type: string, maxLength: 4000}
+    UpdateFlagRequest:
+      allOf:
+        - {$ref: '#/components/schemas/KeyAndVersion'}
+        - type: object
+          required: [name]
+          properties:
+            name: {type: string, minLength: 1, maxLength: 255}
+            description: {type: string, maxLength: 4000}
+    StatusRequest:
+      allOf:
+        - {$ref: '#/components/schemas/KeyAndVersion'}
+        - type: object
+          required: [enabled]
+          properties:
+            enabled: {type: boolean}
+    RollbackRequest:
+      allOf:
+        - {$ref: '#/components/schemas/KeyAndVersion'}
+        - type: object
+          required: [targetVersion]
+          properties:
+            targetVersion: {type: integer, format: int64, minimum: 0}
+    HistoryEntry:
+      type: object
+      required: [version, changedAt, changedBy, action]
+      properties:
+        version: {type: integer, format: int64}
+        changedAt: {type: string, format: date-time}
+        changedBy: {type: string}
+        action: {type: string, enum: [CREATED, UPDATED, STATUS_CHANGED, ARCHIVED, ROLLED_BACK]}
+        oldEnabled: {type: boolean, nullable: true}
+        newEnabled: {type: boolean, nullable: true}
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer}
+        detail: {type: string}
+        correlationId: {type: string}
+        missingKeys: {type: array, items: {$ref: '#/components/schemas/FlagKey'}}

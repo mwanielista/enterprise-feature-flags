@@ -1,0 +1,36 @@
+schema: spec-driven
+context: |
+  Project: Enterprise Feature Flags, self-hosted, one independent deployment per environment.
+  MVP: global Boolean feature flags, no consumer registration, no tenant/project/user targeting.
+  APIs: only POST with JSON bodies for business endpoints; separate /api/v1/admin and /api/v1/runtime.
+  Infrastructure probes and metrics may use GET as required by deployment tooling.
+  Runtime JWT postponed until after MVP; runtime must remain restricted to private trusted networks.
+  Admin authentication required in MVP; secrets never in source or body logs.
+  Backend: Java 21+ Spring Boot, PostgreSQL, Flyway, Maven, local immutable snapshots.
+  Frontend: Angular and PrimeNG. Client: Java library with fallback.
+  Reliability: HA across replicas, failover, bounded cache staleness, last-known-good configuration.
+  Unknown and archived keys result in explicit NOT_FOUND; consumers own fallback defaults.
+  Specs are authoritative; write in English with verifiable WHEN/THEN scenarios.
+rules:
+  proposal:
+    - Include reason, scope, explicit out-of-scope, operational impact and rollback plan.
+  specs:
+    - Each requirement must have a concrete positive or negative WHEN/THEN scenario.
+    - Specify HTTP request/response and error behavior where applicable.
+    - Distinguish business API POST-only rule from infrastructure health endpoints.
+  design:
+    - Describe cache consistency and crash recovery including two or more replicas.
+    - Include security trust boundaries, failure modes, and database migration/rollback risks.
+    - Record important architectural decisions and alternatives considered.
+  tasks:
+    - Break implementation into small testable changes with a clear definition of done.
+    - Include contract, unit, integration, concurrent-change, failover, security and load tests.
+operations:
+  apply:
+    guidance:
+      - Implement one coherent vertical slice at a time.
+      - Keep OpenAPI, behavior and tests synchronized.
+      - Execute available tests and report exact results before checking a task.
+  archive:
+    guidance:
+      - Archive only after verified acceptance tests and a human release review.
